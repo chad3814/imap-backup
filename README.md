@@ -1,7 +1,6 @@
 # mailbackup
 
 [![CI](https://github.com/chad3814/imap-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/chad3814/imap-backup/actions/workflows/ci.yml)
-[![Docker](https://github.com/chad3814/imap-backup/actions/workflows/docker.yml/badge.svg)](https://github.com/chad3814/imap-backup/actions/workflows/docker.yml)
 
 Content-addressed IMAP backup to S3, with **point-in-time mbox restore**. Every
 five minutes it fetches new mail, appends a small JSONL record per folder, and
@@ -205,14 +204,15 @@ Mail (File → Import Mailboxes) or Thunderbird (ImportExportTools NG).
 ## Container image
 
 `ghcr.io/chad3814/imap-backup` is built for `linux/amd64` and `linux/arm64` by
-[`.github/workflows/docker.yml`](.github/workflows/docker.yml) and stored in the
-GitHub Container Registry:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) and stored in the GitHub
+Container Registry. The `publish` job depends on `lint` and `test`, so a red
+build never pushes a tag:
 
 | Trigger | Tags pushed |
 |---|---|
 | push to `main` | `latest`, `main`, `sha-<commit>` |
 | tag `vX.Y.Z` | `X.Y.Z`, `X.Y`, `sha-<commit>` |
-| pull request | none — the image is built but not pushed |
+| pull request | none — the image is built only after lint and tests pass |
 
 Pin deployments to a release tag or `sha-<commit>`; `latest` moves with `main`.
 The package is private by default, so run `docker login ghcr.io` before pulling
@@ -383,8 +383,9 @@ python3 -m venv .venv
 .venv/bin/ruff check mailbackup tests
 ```
 
-CI runs the same commands on every push to `main` and every pull request: ruff
-plus the unit tests on Python 3.12, 3.13 and 3.14
+CI runs the same commands on every push to `main`, every pull request, and every
+`v*` tag: ruff, then the unit tests on Python 3.12, 3.13 and 3.14. Once both
+pass, a `publish` job builds the container image
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 The 100 tests cover event replay (moves, resets, baselines, point-in-time),
