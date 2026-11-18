@@ -1,0 +1,12 @@
+.env
+secrets/*
+!secrets/*.example
+data/
+out/
+restore/
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+*.mbox
+.DS_Store
