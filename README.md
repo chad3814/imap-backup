@@ -215,8 +215,7 @@ build never pushes a tag:
 | pull request | none — the image is built only after lint and tests pass |
 
 Pin deployments to a release tag or `sha-<commit>`; `latest` moves with `main`.
-The package is private by default, so run `docker login ghcr.io` before pulling
-(or make the package public in the repository's package settings).
+The package is public, so pulling it needs no `docker login`.
 
 ## How the tricky cases behave
 
