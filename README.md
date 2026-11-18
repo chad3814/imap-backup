@@ -1,5 +1,8 @@
 # mailbackup
 
+[![CI](https://github.com/chad3814/imap-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/chad3814/imap-backup/actions/workflows/ci.yml)
+[![Docker](https://github.com/chad3814/imap-backup/actions/workflows/docker.yml/badge.svg)](https://github.com/chad3814/imap-backup/actions/workflows/docker.yml)
+
 Content-addressed IMAP backup to S3, with **point-in-time mbox restore**. Every
 five minutes it fetches new mail, appends a small JSONL record per folder, and
 uploads only what changed.
@@ -141,11 +144,23 @@ file as a Compose secret and sets `IMAP_PASSWORD_FILE=/run/secrets/imap_password
 
 ### 3. Run
 
+The image is published to `ghcr.io/chad3814/imap-backup`, so the fastest start
+pulls it instead of building:
+
 ```bash
-docker compose build
+docker compose pull
 docker compose up -d
 docker compose logs -f
 ```
+
+To build from the checkout instead:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+See [Container image](#container-image) for tags and architecture support.
 
 The first cycle seeds the whole mailbox (a 663 MB / 7,130-message mailbox took
 minutes, not hours, with the exporter this is based on). Later cycles fetch only
@@ -186,6 +201,22 @@ the whole archive. Mbox files are generated from the raw messages at
 restore time, with `From ` separator lines, `Status`/`X-Status` from the stored
 flags, CRLF normalisation, and mboxrd `>From` escaping. Import them with Apple
 Mail (File → Import Mailboxes) or Thunderbird (ImportExportTools NG).
+
+## Container image
+
+`ghcr.io/chad3814/imap-backup` is built for `linux/amd64` and `linux/arm64` by
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml) and stored in the
+GitHub Container Registry:
+
+| Trigger | Tags pushed |
+|---|---|
+| push to `main` | `latest`, `main`, `sha-<commit>` |
+| tag `vX.Y.Z` | `X.Y.Z`, `X.Y`, `sha-<commit>` |
+| pull request | none — the image is built but not pushed |
+
+Pin deployments to a release tag or `sha-<commit>`; `latest` moves with `main`.
+The package is private by default, so run `docker login ghcr.io` before pulling
+(or make the package public in the repository's package settings).
 
 ## How the tricky cases behave
 
@@ -347,11 +378,14 @@ production, an IAM role or a mounted credentials file is preferable to keys in
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/pip install ruff moto   # dev-only
+.venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -t . -v
 .venv/bin/ruff check mailbackup tests
 ```
+
+CI runs the same commands on every push to `main` and every pull request: ruff
+plus the unit tests on Python 3.12, 3.13 and 3.14
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 The 100 tests cover event replay (moves, resets, baselines, point-in-time),
 mbox parsing/escaping, per-folder reconciliation, restart/bootstrap, S3 via

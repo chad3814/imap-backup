@@ -1,7 +1,7 @@
 services:
   mailbackup:
+    image: ghcr.io/chad3814/imap-backup:latest
     build: .
-    image: mailbackup:latest
     container_name: mailbackup
     restart: unless-stopped
     env_file:
